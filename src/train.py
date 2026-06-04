@@ -7,17 +7,34 @@ from torch.utils.data import DataLoader
 from tokenizers import Tokenizer
 
 from transformer import Transformer
-from training.data.dataset import ShakespeareDataset
+from dataset import ShakespeareDataset
 
 # -----------------------------------
 # Device
 # -----------------------------------
 
-device = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "cpu"
-)
+if torch.cuda.is_available():
+    device = "cuda"
+    print("CUDA is available. Training on GPU.")
+else:
+    while True:
+        try:
+            answer = input(
+                "CUDA is not available. Train on CPU instead? [y/N]: "
+            ).strip().lower()
+        except EOFError:
+            raise SystemExit(
+                "No interactive input available. Please run this script in a terminal or enable CUDA."
+            )
+
+        if answer in {"y", "yes"}:
+            device = "cpu"
+            print("Training on CPU.")
+            break
+        elif answer in {"n", "no", ""}:
+            raise SystemExit("Training aborted because CUDA is unavailable.")
+        else:
+            print("Please answer 'y' or 'n'.")
 
 # -----------------------------------
 # Paths
@@ -26,18 +43,16 @@ device = (
 BASE_DIR = Path(__file__).resolve().parent
 
 TEXT_PATH = (
-    BASE_DIR
-    / "training"
+    BASE_DIR.parent
     / "data"
-    / "raw-data"
+    / "raw"
     / "raw_data.txt"
 )
 
 TOKENIZER_PATH = (
-    BASE_DIR
-    / "training"
+    BASE_DIR.parent
     / "data"
-    / "cleaned-data"
+    / "processed"
     / "tokenizer.json"
 )
 

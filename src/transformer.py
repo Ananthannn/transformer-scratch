@@ -197,7 +197,7 @@ class DecoderLayer(nn.Module):
         out = self.self_attn(x , x , x , tgt_mask)
         x = self.AddAndNorm1(x + out)
 
-        out = self.self_attn(x , encoder_output , encoder_output , src_mask)
+        out = self.cross_attn(x , encoder_output , encoder_output , src_mask)
         x = self.AddAndNorm2(x + out)
 
         out = self.FFN(x)
@@ -217,7 +217,7 @@ class Decoder(nn.Module):
             ]
         )
     
-    def forward(self , x , Encoder_input , tgt_mask = None , src_mask = None):
+    def forward(self , x , Encoder_input , src_mask = None , tgt_mask = None):
         
         # embedding the content in the corpus
         x = self.embedd(x)
@@ -226,7 +226,7 @@ class Decoder(nn.Module):
         x = self.positionEmbedd(x)
 
         for layer in self.layers:
-            x = layer(x , Encoder_input , tgt_mask , src_mask)
+            x = layer(x , Encoder_input , src_mask , tgt_mask)
 
         return x   
 

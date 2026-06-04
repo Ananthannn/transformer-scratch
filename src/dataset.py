@@ -85,17 +85,19 @@ class ShakespeareDataset(Dataset):
 
 if __name__ == "__main__":
 
-    base_dir = Path(__file__).resolve().parent
+    project_root = Path(__file__).resolve().parent.parent
 
     text_path = (
-        base_dir /
-        "raw-data" /
+        project_root /
+        "data" /
+        "raw" /
         "raw_data.txt"
     )
 
     tokenizer_path = (
-        base_dir /
-        "cleaned-data" /
+        project_root /
+        "data" /
+        "processed" /
         "tokenizer.json"
     )
 
