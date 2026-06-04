@@ -206,14 +206,14 @@ class DecoderLayer(nn.Module):
         return x
 
 class Decoder(nn.Module):
-    def __init__(self , vocab_size , d_model , num_heads , num_neurons , num_encoders):
+    def __init__(self , vocab_size , d_model , num_heads , num_neurons , num_decoders):
         super().__init__()
 
         self.embedd = Embedding(vocab_size , d_model)
         self.positionEmbedd = PossitionalEncoding(d_model)
         self.layers = nn.ModuleList(
             [
-                DecoderLayer(d_model , num_heads , num_neurons) for _ in range(num_encoders)
+                DecoderLayer(d_model , num_heads , num_neurons) for _ in range(num_decoders)
             ]
         )
     
@@ -229,58 +229,277 @@ class Decoder(nn.Module):
             x = layer(x , Encoder_input , tgt_mask , src_mask)
 
         return x   
-                 
-if __name__ == "__main__":
-    
-    vocab = {
-    "i": 0,
-    "love": 1,
-    "deep": 2,
-    "learning": 3
-    }
-    vocab_size = len(vocab)
-    d_model = 8
-    embedd = Embedding(vocab_size , d_model)
 
-    sentence = [i for i in vocab] # sentence =['i', 'love', 'deep', 'learning']
-    
-    token_id = torch.tensor([
-        [vocab[words] for words in sentence]  # tensor([0, 1, 2, 3]) -> ('i', 'love', 'deep', 'learning')
+class Transformer(nn.Module):
+    def __init__(self , src_vocab , tgt_vocab , d_model = 512 , num_heads = 8 , num_neurons = 2048 , num_layers = 6):
+        super().__init__()
+
+        self.Encoder = Encoder(src_vocab , d_model , num_heads , num_neurons , num_layers)
+
+        self.Decoder = Decoder(tgt_vocab , d_model , num_heads , num_neurons , num_layers)
+
+        self.LinearNet = nn.Linear(d_model , tgt_vocab)
+
+    def forward(self , src , tgt , src_mask = None , tgt_mask = None):
+        encoderOut = self.Encoder(src , src_mask)
+        decoderOut = self.Decoder(tgt , encoderOut , src_mask , tgt_mask)
+        logits = self.LinearNet(decoderOut)
+
+        return logits
+
+if __name__ == "__main__":
+
+    # =====================================
+    # Vocabulary
+    # =====================================
+
+    vocab = {
+        "i": 0,
+        "love": 1,
+        "deep": 2,
+        "learning": 3
+    }
+
+    id_to_word = {
+        idx: word
+        for word, idx in vocab.items()
+    }
+
+    vocab_size = len(vocab)
+
+    # =====================================
+    # Hyperparameters
+    # =====================================
+
+    d_model = 8
+    num_heads = 2
+    d_ff = 10
+    num_layers = 2
+
+    # =====================================
+    # Source Sentence
+    # =====================================
+
+    sentence = [
+        "i",
+        "love",
+        "deep",
+        "learning"
+    ]
+
+    token_ids = torch.tensor([
+        [vocab[word] for word in sentence]
     ])
 
-    Embeddings = embedd(token_id) 
-    
-    print()
-    print("embedding without the positional encoding: ")
-    print(Embeddings.shape)
+    print("=" * 60)
+    print("TOKEN IDS")
+    print("=" * 60)
 
-    '''    
+    print(token_ids)
+    print()
+
+    # =====================================
+    # Embedding
+    # =====================================
+
+    embedding = Embedding(
+        vocab_size,
+        d_model
+    )
+
+    embeddings = embedding(token_ids)
+
+    print("=" * 60)
+    print("EMBEDDINGS")
+    print("=" * 60)
+
+    print("Shape:", embeddings.shape)
+    print()
+
     for i, word in enumerate(sentence):
-        print(f"{word} = {Embeddings[0, i]}")
-    '''
-    
-    #Embedding with positional encoding
+        print(f"{word} = {embeddings[0, i]}")
 
-    positional_encod = PossitionalEncoding(d_model , max_len=100)
-    PosEncoded = positional_encod(Embeddings)
-    
-    print()
-    print("embedding with the positional encoding: ")
-    
-    
-    '''for i, word in enumerate(sentence):
-        print(f"{word} = {PosEncoded[0, i]}")
-    '''
-    print(PosEncoded.shape)
     print()
 
-    mha = MultiHeadAttention(d_model , 2)
-    mha_score = mha(PosEncoded , PosEncoded , PosEncoded)
+    # =====================================
+    # Positional Encoding
+    # =====================================
 
-    print("Multi Head Attention Output")
-    print(mha_score.shape)
+    positional = PossitionalEncoding(
+        d_model,
+        max_len=100
+    )
 
-    encoder = Encoder(vocab_size , d_model , 2 , 10 , 10)
-    encoderOut = encoder(token_id)
+    pos_embeddings = positional(
+        embeddings
+    )
 
-    print(encoderOut.shape)
+    print("=" * 60)
+    print("POSITIONAL ENCODING OUTPUT")
+    print("=" * 60)
+
+    print("Shape:", pos_embeddings.shape)
+    print()
+
+    for i, word in enumerate(sentence):
+        print(f"{word} = {pos_embeddings[0, i]}")
+
+    print()
+
+    # =====================================
+    # Multi Head Attention
+    # =====================================
+
+    mha = MultiHeadAttention(
+        d_model,
+        num_heads
+    )
+
+    mha_output = mha(
+        pos_embeddings,
+        pos_embeddings,
+        pos_embeddings
+    )
+
+    print("=" * 60)
+    print("MULTI HEAD ATTENTION")
+    print("=" * 60)
+
+    print("Shape:", mha_output.shape)
+    print()
+
+    for i, word in enumerate(sentence):
+        print(f"{word} = {mha_output[0, i]}")
+
+    print()
+
+    # =====================================
+    # Encoder
+    # =====================================
+
+    encoder = Encoder(
+        vocab_size=vocab_size,
+        d_model=d_model,
+        num_heads=num_heads,
+        num_neurons=d_ff,
+        num_encoders=num_layers
+    )
+
+    encoder_output = encoder(
+        token_ids
+    )
+
+    print("=" * 60)
+    print("ENCODER OUTPUT")
+    print("=" * 60)
+
+    print("Shape:", encoder_output.shape)
+    print()
+
+    for i, word in enumerate(sentence):
+        print(f"{word} = {encoder_output[0, i]}")
+
+    print()
+
+    # =====================================
+    # Decoder Input
+    # =====================================
+
+    tgt_sentence = [
+        "i",
+        "love",
+        "deep"
+    ]
+
+    tgt_ids = torch.tensor([
+        [vocab[word] for word in tgt_sentence]
+    ])
+
+    print("=" * 60)
+    print("DECODER INPUT")
+    print("=" * 60)
+
+    print(tgt_ids)
+    print()
+
+    # =====================================
+    # Decoder
+    # =====================================
+
+    decoder = Decoder(
+        vocab_size=vocab_size,
+        d_model=d_model,
+        num_heads=num_heads,
+        num_neurons=d_ff,
+        num_decoders=num_layers
+    )
+
+    decoder_output = decoder(
+        tgt_ids,
+        encoder_output
+    )
+
+    print("=" * 60)
+    print("DECODER OUTPUT")
+    print("=" * 60)
+
+    print("Shape:", decoder_output.shape)
+    print()
+
+    for i, word in enumerate(tgt_sentence):
+        print(f"{word} = {decoder_output[0, i]}")
+
+    print()
+
+    # =====================================
+    # Full Transformer
+    # =====================================
+
+    transformer = Transformer(
+        src_vocab=vocab_size,
+        tgt_vocab=vocab_size,
+        d_model=d_model,
+        num_heads=num_heads,
+        num_neurons=d_ff,
+        num_layers=num_layers
+    )
+
+    logits = transformer(
+        token_ids,
+        tgt_ids
+    )
+
+    print("=" * 60)
+    print("TRANSFORMER LOGITS")
+    print("=" * 60)
+
+    print("Shape:", logits.shape)
+    print()
+
+    print(logits)
+    print()
+
+    # =====================================
+    # Predictions
+    # =====================================
+
+    predictions = torch.argmax(
+        logits,
+        dim=-1
+    )
+
+    print("=" * 60)
+    print("PREDICTED TOKEN IDS")
+    print("=" * 60)
+
+    print(predictions)
+    print()
+
+    print("=" * 60)
+    print("PREDICTED WORDS")
+    print("=" * 60)
+
+    for token in predictions[0]:
+        print(
+            id_to_word[token.item()]
+        )
