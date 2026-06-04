@@ -176,7 +176,59 @@ class Encoder(nn.Module):
 
         return x
 
+class DecoderLayer(nn.Module):
+    def __init__(self , d_model , num_heads , num_neurons):
+        super().__init__()
 
+        self.self_attn = MultiHeadAttention(d_model , num_heads)
+
+        self.cross_attn = MultiHeadAttention(d_model , num_heads)
+
+        self.FFN = FeedForwardNetwork(d_model , num_neurons)
+
+        self.AddAndNorm1 = nn.LayerNorm(d_model)
+
+        self.AddAndNorm2 = nn.LayerNorm(d_model)
+
+        self.AddAndNorm3 = nn.LayerNorm(d_model)
+
+    def forward(self , x , encoder_output , src_mask = None , tgt_mask = None):
+        
+        out = self.self_attn(x , x , x , tgt_mask)
+        x = self.AddAndNorm1(x + out)
+
+        out = self.self_attn(x , encoder_output , encoder_output , src_mask)
+        x = self.AddAndNorm2(x + out)
+
+        out = self.FFN(x)
+        x = self.AddAndNorm3(x+out)
+
+        return x
+
+class Decoder(nn.Module):
+    def __init__(self , vocab_size , d_model , num_heads , num_neurons , num_encoders):
+        super().__init__()
+
+        self.embedd = Embedding(vocab_size , d_model)
+        self.positionEmbedd = PossitionalEncoding(d_model)
+        self.layers = nn.ModuleList(
+            [
+                DecoderLayer(d_model , num_heads , num_neurons) for _ in range(num_encoders)
+            ]
+        )
+    
+    def forward(self , x , Encoder_input , tgt_mask = None , src_mask = None):
+        
+        # embedding the content in the corpus
+        x = self.embedd(x)
+
+        # adding the positional encoding to the embeddings
+        x = self.positionEmbedd(x)
+
+        for layer in self.layers:
+            x = layer(x , Encoder_input , tgt_mask , src_mask)
+
+        return x   
                  
 if __name__ == "__main__":
     
