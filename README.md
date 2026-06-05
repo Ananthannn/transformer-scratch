@@ -1,55 +1,89 @@
 # Transformer from Scratch 🚀
+A full re-creation of the architecture described in the groundbreaking paper **["Attention Is All You Need"](https://arxiv.org/abs/1706.03762)** (Vaswani et al., 2017), built entirely from scratch using PyTorch — trained on the **Tiny Shakespeare** dataset to generate Shakespeare-like text.
 
-An attempt to re-create the architecture described in the groundbreaking paper **["Attention Is All You Need"](https://arxiv.org/abs/1706.03762)** (Vaswani et al., 2017) entirely from scratch using PyTorch. 
-
-This project was heavily inspired by Andrej Karpathy's fantastic video tutorial: **["Let's build GPT: from scratch, in code, spelled out."](https://www.youtube.com/watch?v=kCc8FmEb1nY)**
-
-The model has been trained on the **Tiny Shakespeare** dataset to generate Shakespeare-like text.
+Heavily inspired by Andrej Karpathy's fantastic tutorial: **["Let's build GPT: from scratch, in code, spelled out."](https://www.youtube.com/watch?v=kCc8FmEb1nY)**
 
 ---
 
-## 🧠 Architecture & Codebase Overview
+## 🧠 Features
 
-The codebase is organized into several key modules inside the `src/` directory, each handling a specific part of the Transformer pipeline.
+- **Custom Tokenizer:** Trains a Byte-Pair Encoding (BPE) tokenizer from scratch on raw text using HuggingFace `tokenizers`.
+- **Full Transformer Architecture:** Encoder + Decoder with multi-head attention, positional encoding, and feed-forward layers — all implemented from scratch.
+- **Shakespeare Text Generation:** Trained on Tiny Shakespeare with temperature-scaled multinomial sampling for creative text generation.
+- **Causal Masking:** Dynamically generated masks prevent the decoder from attending to future tokens during training.
+
+---
+
+## 🖥️ Tech Stack
+
+- **Framework:** Python, PyTorch
+- **Tokenizer:** HuggingFace `tokenizers` (BPE)
+- **Dataset:** Tiny Shakespeare
+
+---
+
+## 📦 Project Structure
+
+```
+transformer-from-scratch/
+├── src/
+│   ├── transformer.py      # Full Transformer architecture
+│   ├── build_token.py      # BPE tokenizer training
+│   ├── dataset.py          # PyTorch Dataset for Shakespeare
+│   ├── train.py            # Training loop
+│   ├── predict.py          # Inference & text generation
+│   └── transformer.pt      # Saved model weights
+├── data/
+│   ├── raw/
+│   │   └── raw_data.txt    # Raw Tiny Shakespeare text
+│   └── processed/
+│       └── tokenizer.json  # Trained BPE tokenizer
+└── requirements.txt
+```
+
+---
+
+## 🔍 Architecture Overview
 
 ### `src/transformer.py`
-The core implementation of the Transformer model. It includes all the essential building blocks:
-- **`Embedding` & `PossitionalEncoding`**: Converts input tokens into dense vectors and injects sequence position information using sine/cosine functions.
-- **`MultiHeadAttention`**: The core mechanism allowing the model to focus on different parts of the input sequence simultaneously.
-- **`FeedForwardNetwork`**: A simple two-layer feed-forward network applied to each position separately.
-- **`Encoder` & `Decoder`**: The main stacks. The Encoder processes the input, and the Decoder generates the output (incorporating masked self-attention and cross-attention).
-- **`Transformer`**: The final wrapper model bringing everything together.
+The core implementation containing all essential building blocks:
+- **`Embedding` & `PositionalEncoding`** — Converts tokens into dense vectors and injects positional info via sine/cosine functions.
+- **`MultiHeadAttention`** — Allows the model to attend to different parts of the sequence simultaneously.
+- **`FeedForwardNetwork`** — A two-layer feed-forward network applied position-wise.
+- **`Encoder` & `Decoder`** — The main stacks; the Encoder processes input, the Decoder generates output with masked self-attention and cross-attention.
+- **`Transformer`** — The final wrapper bringing all components together.
 
 ### `src/build_token.py`
-Handles the creation of the vocabulary. It uses the HuggingFace `tokenizers` library to train a custom Byte-Pair Encoding (BPE) tokenizer on the raw Tiny Shakespeare text, saving it as `tokenizer.json`.
+Trains a custom BPE tokenizer on raw Tiny Shakespeare text and saves it as `tokenizer.json`.
 
 ### `src/dataset.py`
-A custom PyTorch `Dataset` (`ShakespeareDataset`) that loads the tokenized text and prepares input-target pairs (sequences of length `block_size` shifted by one token) for next-token prediction training.
+A custom PyTorch `Dataset` (`ShakespeareDataset`) that loads tokenized text and prepares input-target pairs of length `block_size` (shifted by one token) for next-token prediction.
 
 ### `src/train.py`
-The training loop. It initializes the `Transformer`, sets up the `CrossEntropyLoss` and `AdamW` optimizer, and iterates over the dataset. It also dynamically generates causal masks to prevent the decoder from "looking ahead" at future tokens. The final weights are saved as `transformer.pt`.
+The training loop — initializes the model, sets up `CrossEntropyLoss` and `AdamW`, iterates over the dataset with dynamic causal masks, and saves final weights to `transformer.pt`.
 
 ### `src/predict.py`
-The inference script. It loads the trained weights (`transformer.pt`) and provides an interactive loop where you can input a prompt. The model generates continuation text token-by-token using temperature-scaled multinomial sampling.
+Inference script — loads `transformer.pt` and runs an interactive loop where you provide a prompt and the model generates continuation text token-by-token.
 
 ---
 
 ## 🛠️ Setup & Installation
 
-Install the project dependencies using pip:
-
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-If you want to keep dependencies isolated, create a virtual environment first:
+To keep dependencies isolated, use a virtual environment:
 
 ```bash
 python -m venv .venv
+
 # On Windows
 .venv\Scripts\activate
+
 # On Linux/Mac
 source .venv/bin/activate
+
 python -m pip install -r requirements.txt
 ```
 
@@ -58,21 +92,36 @@ python -m pip install -r requirements.txt
 ## 🚀 Usage
 
 ### 1. Build the Tokenizer
-Before training, you need to build the tokenizer from the raw data:
 ```bash
 python src/build_token.py
 ```
 
 ### 2. Train the Model
-Train the Transformer on the Tiny Shakespeare dataset (CUDA recommended):
+*(CUDA recommended)*
 ```bash
 python src/train.py
 ```
 
 ### 3. Generate Text
-Once trained, use the prediction script to interact with the model:
 ```bash
 python src/predict.py
 ```
 
-*Happy modeling!* 🎭
+---
+
+## 🌐 Connect with Me
+
+[![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?style=flat&logo=instagram&logoColor=white)](https://www.instagram.com/v_ananthann_?igsh=MWFlcHo5a2pvNm5yaA==)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/v-anantha-krishnan-739b942a5/)
+[![Email](https://img.shields.io/badge/Email-%23D14836.svg?style=flat&logo=gmail&logoColor=white)](mailto:vananthakrs@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-%2312100E.svg?style=flat&logo=github&logoColor=white)](https://github.com/Ananthannn)
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+> Made with ❤️ by V Anantha Krishnan
