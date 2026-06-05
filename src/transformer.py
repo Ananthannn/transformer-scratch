@@ -30,9 +30,9 @@ class PossitionalEncoding(nn.Module):
         self.register_buffer("pe" , pe)
 
     def forward(self , x):
-        max_len = x.size(1)
+        seq_len = x.size(1)
 
-        return x + self.pe[:,:max_len]
+        return x + self.pe[:,:seq_len]
 
 class ScaledDotProductAttention(nn.Module):
     def __init__(self):
@@ -157,6 +157,7 @@ class Encoder(nn.Module):
 
         self.embedd = Embedding(vocab_size , d_model)
         self.positionEmbedd = PossitionalEncoding(d_model)
+        self.d_model = d_model
         self.layers = nn.ModuleList(
             [
                 EncoderLayer(d_model , num_heads , num_neurons) for _ in range(num_encoders)
@@ -166,7 +167,7 @@ class Encoder(nn.Module):
     def forward(self , x , mask = None):
         
         # embedding the content in the corpus
-        x = self.embedd(x)
+        x = self.embedd(x)*math.sqrt(self.d_model)
 
         # adding the positional encoding to the embeddings
         x = self.positionEmbedd(x)
@@ -211,6 +212,7 @@ class Decoder(nn.Module):
 
         self.embedd = Embedding(vocab_size , d_model)
         self.positionEmbedd = PossitionalEncoding(d_model)
+        self.d_model = d_model
         self.layers = nn.ModuleList(
             [
                 DecoderLayer(d_model , num_heads , num_neurons) for _ in range(num_decoders)
@@ -220,7 +222,7 @@ class Decoder(nn.Module):
     def forward(self , x , Encoder_input , src_mask = None , tgt_mask = None):
         
         # embedding the content in the corpus
-        x = self.embedd(x)
+        x = self.embedd(x)*math.sqrt(self.d_model)
 
         # adding the positional encoding to the embeddings
         x = self.positionEmbedd(x)

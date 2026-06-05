@@ -69,12 +69,27 @@ VOCAB_SIZE = tokenizer.get_vocab_size()
 print(
     f"Vocabulary Size: {VOCAB_SIZE}"
 )
+# -----------------------------------
+# Causal Mask Function
+# -----------------------------------
+
+def generate_causal_mask(seq_len, device):
+
+    mask = torch.tril(
+        torch.ones(
+            seq_len,
+            seq_len,
+            device=device
+        )
+    )
+
+    return mask.unsqueeze(0).unsqueeze(0)
 
 # -----------------------------------
 # Hyperparameters
 # -----------------------------------
 
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 
 BLOCK_SIZE = 64
 
@@ -84,7 +99,7 @@ NUM_HEADS = 4
 
 NUM_NEURONS = 512
 
-NUM_LAYERS = 2
+NUM_LAYERS = 4
 
 LEARNING_RATE = 3e-4
 
@@ -150,25 +165,21 @@ for epoch in range(EPOCHS):
 
         target = target.to(device)
 
-        # -----------------------------------
-        # Encoder Input
-        # -----------------------------------
-
         encoder_input = src
-
-        # -----------------------------------
-        # Decoder Input
-        # -----------------------------------
 
         decoder_input = src
 
-        # -----------------------------------
-        # Forward
-        # -----------------------------------
+        B, T = src.shape
+
+        tgt_mask = generate_causal_mask(
+            T,
+            device
+        )
 
         logits = model(
             encoder_input,
-            decoder_input
+            decoder_input,
+            tgt_mask=tgt_mask
         )
 
         # logits
